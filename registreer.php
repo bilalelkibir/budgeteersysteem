@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check of de wachtwoorden overeenkomen
     if ($password !== $password_confirm) {
         $_SESSION['error_message'] = "De wachtwoorden komen niet overeen!";
+        $_SESSION['form_data'] = $_POST; // Bewaar de gegevens om ze opnieuw in te vullen
         header("Location: registreer.php");
         exit;
     }
@@ -32,6 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($result) {
         $_SESSION['error_message'] = "Dit e-mailadres is al geregistreerd!";
+        $_SESSION['form_data'] = $_POST; // Bewaar de gegevens om ze opnieuw in te vullen
         header("Location: registreer.php");
         exit;
     }
@@ -50,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $_SESSION['user_name'] = $name;
 
     $_SESSION['success_message'] = "Registratie succesvol! Je kunt nu inloggen.";
-    header("Location: login.php");
+    header("Location: index.php"); // Verander naar index.php na succesvolle registratie
     exit;
 }
 ?>
@@ -104,45 +106,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             top: 80px;
             text-align: center;
         }
+
+        .is-invalid {
+            border-color: red;
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: red;
+        }
     </style>
 </head>
 <body>
 
 <h1 class="h1 mb-4 position-absolute top-0 mt-3">Registreren</h1>
 
-<?php if ($error_message): ?>
-    <div class="error-box fade-in fw-bold fs-4 text-black"><?= $error_message ?></div>
-<?php elseif ($success_message): ?>
-    <div class="success-box fade-in fw-bold fs-4 text-success"><?= $success_message ?></div>
-<?php else: ?>
-    <form method="post" class="register-form fade-in">
-        <div class="mb-3">
-            <label for="name" class="form-label">Naam</label>
-            <input type="text" class="form-control" id="name" name="name" required>
-        </div>
+<form method="post" class="register-form fade-in">
+    <!-- Naam -->
+    <div class="mb-3">
+        <label for="name" class="form-label">Naam</label>
+        <input type="text" class="form-control <?php echo isset($_SESSION['form_data']['name']) ? 'is-invalid' : ''; ?>" id="name" name="name" value="<?= isset($_SESSION['form_data']['name']) ? $_SESSION['form_data']['name'] : ''; ?>" required>
+    </div>
 
-        <div class="mb-3">
-            <label for="email" class="form-label">Emailadres</label>
-            <input type="email" class="form-control" id="email" name="email" required>
-        </div>
+    <!-- Email -->
+    <div class="mb-3">
+        <label for="email" class="form-label">Emailadres</label>
+        <input type="email" class="form-control <?php echo isset($_SESSION['form_data']['email']) ? 'is-invalid' : ''; ?>" id="email" name="email" value="<?= isset($_SESSION['form_data']['email']) ? $_SESSION['form_data']['email'] : ''; ?>" required>
+    </div>
 
-        <div class="mb-3">
-            <label for="password" class="form-label">Wachtwoord</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
+    <!-- Wachtwoord -->
+    <div class="mb-3">
+        <label for="password" class="form-label">Wachtwoord</label>
+        <input type="password" class="form-control <?php echo (isset($_SESSION['form_data']['password']) && $_SESSION['form_data']['password'] !== $_SESSION['form_data']['password_confirm']) ? 'is-invalid' : ''; ?>" id="password" name="password" value="<?= isset($_SESSION['form_data']['password']) ? $_SESSION['form_data']['password'] : ''; ?>" required>
+        <?php if (isset($_SESSION['form_data']['password']) && $_SESSION['form_data']['password'] !== $_SESSION['form_data']['password_confirm']): ?>
+            <div class="invalid-feedback">Wachtwoord komt niet overeen</div>
+        <?php endif; ?>
+    </div>
 
-        <div class="mb-3">
-            <label for="password_confirm" class="form-label">Herhaal Wachtwoord</label>
-            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
-        </div>
+    <!-- Wachtwoord herhalen -->
+    <div class="mb-3">
+        <label for="password_confirm" class="form-label">Herhaal Wachtwoord</label>
+        <input type="password" class="form-control <?php echo (isset($_SESSION['form_data']['password_confirm']) && $_SESSION['form_data']['password'] !== $_SESSION['form_data']['password_confirm']) ? 'is-invalid' : ''; ?>" id="password_confirm" name="password_confirm" value="<?= isset($_SESSION['form_data']['password_confirm']) ? $_SESSION['form_data']['password_confirm'] : ''; ?>" required>
+        <?php if (isset($_SESSION['form_data']['password_confirm']) && $_SESSION['form_data']['password'] !== $_SESSION['form_data']['password_confirm']): ?>
+            <div class="invalid-feedback">Wachtwoord komt niet overeen</div>
+        <?php endif; ?>
+    </div>
 
-        <button type="submit" class="btn btn-primary w-100">Registreer</button>
-        <div class="mt-3 text-center">
-            <a href="login.php">Al een account? Log in hier</a>
-        </div>
-    </form>
+    <!-- Registratieknop -->
+    <button type="submit" class="btn btn-primary w-100">Registreer</button>
 
-<?php endif; ?>
+    <div class="mt-3 text-center">
+        <a href="login.php">Al een account? Log in hier</a>
+    </div>
+</form>
+
+<?php unset($_SESSION['form_data']); ?>
 
 </body>
 </html>
