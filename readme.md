@@ -54,7 +54,7 @@ CREATE TABLE budget (
 );
 
 -- Tabel: uitgaven
-CREATE TABLE uitgaven (
+CREATE TABLE uitgaven_details (
     id INT AUTO_INCREMENT PRIMARY KEY,
     budget_id INT NOT NULL,
     categorie VARCHAR(50),
