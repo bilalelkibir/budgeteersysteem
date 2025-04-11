@@ -24,13 +24,7 @@ Een eenvoudig budgeteersysteem waarin gebruikers zich kunnen registreren, inlogg
 
 Zorg ervoor dat XAMPP is geïnstalleerd en je Apache en MySQL hebt gestart.
 
-Importeer het database.sql bestand in je MySQL-database:
-
-Open phpMyAdmin via http://localhost/phpmyadmin.
-
-Maak een nieuwe database aan (bijvoorbeeld budgeteer_db).
-
-Pas de databasegegevens aan in config.php (indien nodig).
+Importeer het sql code in je phpmyadmin: 
 ```
 -- Database aanmaken
 CREATE DATABASE IF NOT EXISTS budgeteer_db;
@@ -62,3 +56,33 @@ CREATE TABLE uitgaven_details (
     bedrag DECIMAL(10,2),
     FOREIGN KEY (budget_id) REFERENCES budget(id)
 );
+```
+
+Pas de databasegegevens aan in config.php (indien nodig):
+```
+<?php
+$host = "localhost";
+$user = "bit_academy";
+$password = "";
+$database = "budgeteer_db";
+
+$conn = new PDO("mysql:host=$host;dbname=$dbname", $user, $password);
+
+try {
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $user, $password);
+    // set the PDO error mode to exception
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  } catch(PDOException $e) {
+    echo "Connection failed: " . $e->getMessage();
+  }
+?>
+```
+
+Veel succes met budgetteren! 😄💰
+
+
+
+
+
+
+
