@@ -3,32 +3,52 @@ session_start();
 require 'config.php';
 
 $error_message = "";
+$success_message = "";
 
 // Haal foutmelding op uit de sessie
-if (isset($_SESSION['register_error'])) {
-    $error_message = $_SESSION['register_error'];
-    unset($_SESSION['register_error']);
+if (isset($_SESSION['error_message'])) {
+    $error_message = $_SESSION['error_message'];
+    unset($_SESSION['error_message']);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = $_POST['name'];
     $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $password = $_POST['password'];
+    $password_confirm = $_POST['password_confirm'];
 
-    $sql = "INSERT INTO users (email, password) VALUES (:email, :password)";
-    $stmt = $conn->prepare($sql);
+    // Check of de wachtwoorden overeenkomen
+    if ($password !== $password_confirm) {
+        $_SESSION['error_message'] = "De wachtwoorden komen niet overeen!";
+        header("Location: registreer.php");
+        exit;
+    }
+
+    // Controleer of het e-mailadres al bestaat
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
     $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':password', $password);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($result) {
+        $_SESSION['error_message'] = "Dit e-mailadres is al geregistreerd!";
+        header("Location: registreer.php");
+        exit;
+    }
+
+    // Versleutel het wachtwoord
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+    // Voeg de gebruiker toe aan de database
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (:name, :email, :password)");
+    $stmt->bindParam(':name', $name);
+    $stmt->bindParam(':email', $email);
+    $stmt->bindParam(':password', $hashed_password);
     $stmt->execute();
 
-    if ($stmt->execute()) {
-        header("Location: login.php");
-        exit();
-    } else {
-        // Fout opslaan in sessie, bijv. e-mail bestaat al
-        $_SESSION['register_error'] = "Registratie mislukt. Misschien bestaat dit e-mailadres al.";
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
+    $_SESSION['success_message'] = "Registratie succesvol! Je kunt nu inloggen.";
+    header("Location: login.php");
+    exit;
 }
 ?>
 
@@ -36,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Registreer</title>
+    <title>Registreren</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -70,19 +90,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .register-form {
             width: 300px;
-            background: #f9f9f9;
+            background: white;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
             border: 1px solid #ccc;
         }
 
-        .error-box {
+        .error-box, .success-box {
             position: absolute;
-            top: 40px;
+            top: 80px;
             text-align: center;
         }
-        
     </style>
 </head>
 <body>
@@ -91,8 +109,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <?php if ($error_message): ?>
     <div class="error-box fade-in fw-bold fs-4 text-black"><?= $error_message ?></div>
+<?php elseif ($success_message): ?>
+    <div class="success-box fade-in fw-bold fs-4 text-success"><?= $success_message ?></div>
 <?php else: ?>
     <form method="post" class="register-form fade-in">
+        <div class="mb-3">
+            <label for="name" class="form-label">Naam</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+
         <div class="mb-3">
             <label for="email" class="form-label">Emailadres</label>
             <input type="email" class="form-control" id="email" name="email" required>
@@ -103,8 +128,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
 
+        <div class="mb-3">
+            <label for="password_confirm" class="form-label">Herhaal Wachtwoord</label>
+            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+        </div>
+
         <button type="submit" class="btn btn-primary w-100">Registreer</button>
+        <div class="mt-3 text-center">
+        <a href="login.php">Al een account? Log in hier</a>
+    </div>
     </form>
+
+   
 <?php endif; ?>
 
 </body>

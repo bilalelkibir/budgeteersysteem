@@ -89,19 +89,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <?php if ($error_message): ?>
     <div class="error-box fade-in fw-bold fs-4 text-black"><?= $error_message ?></div>
 <?php else: ?>
-    <form method="post" class="login-form fade-in">
-        <div class="mb-3">
-            <label for="email" class="form-label">Emailadres</label>
-            <input type="email" class="form-control" id="email" name="email" required>
-        </div>
+   <form method="post" class="login-form fade-in">
+    <div class="mb-3">
+        <label for="email" class="form-label">Emailadres</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+    </div>
 
-        <div class="mb-3">
-            <label for="password" class="form-label">Wachtwoord</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Wachtwoord</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+    </div>
 
-        <button type="submit" class="btn btn-primary w-100">Log in</button>
-    </form>
+    <button type="submit" class="btn btn-primary w-100">Log in</button>
+
+    <!-- Link naar registratiepagina -->
+    <div class="mt-3 text-center">
+        <a href="registreer.php">Nog geen account? Registreer hier</a>
+    </div>
+</form>
+
 <?php endif; ?>
 
 </body>
