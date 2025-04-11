@@ -21,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($result && password_verify($password, $result['password'])) {
         $_SESSION['user_id'] = $result['id'];
+        $_SESSION['user_name'] = $result['name'];  // Naam wordt opgeslagen in de sessie
         header("Location: index.php");
         exit;
     } else {

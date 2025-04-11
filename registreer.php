@@ -46,6 +46,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->bindParam(':password', $hashed_password);
     $stmt->execute();
 
+    // Sla de naam van de gebruiker op in de sessie
+    $_SESSION['user_name'] = $name;
+
     $_SESSION['success_message'] = "Registratie succesvol! Je kunt nu inloggen.";
     header("Location: login.php");
     exit;
@@ -135,11 +138,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <button type="submit" class="btn btn-primary w-100">Registreer</button>
         <div class="mt-3 text-center">
-        <a href="login.php">Al een account? Log in hier</a>
-    </div>
+            <a href="login.php">Al een account? Log in hier</a>
+        </div>
     </form>
 
-   
 <?php endif; ?>
 
 </body>

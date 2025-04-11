@@ -11,6 +11,9 @@ $user_id = $_SESSION['user_id'];
 
 // Haal alle bestaande maanden van de gebruiker op
 $budgetten = $conn->query("SELECT id, maand FROM budget WHERE user_id = $user_id");
+
+// Controleer of er een geselecteerd budget_id is (voor het herladen van de pagina)
+$selected_budget_id = isset($_GET['budget_id']) ? $_GET['budget_id'] : null;
 ?>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,9 +23,11 @@ $budgetten = $conn->query("SELECT id, maand FROM budget WHERE user_id = $user_id
         <div class="mb-3">
             <label>Kies maand:</label>
             <select name="budget_id" class="form-select" required>
-                <?php while ($b = $budgetten->fetch_assoc()): ?>
-                    <option value="<?= $b['id'] ?>"><?= ucfirst($b['maand']) ?></option>
-                <?php endwhile; ?>
+            <?php while ($b = $budgetten->fetch(PDO::FETCH_ASSOC)): ?>
+                <option value="<?= $b['id'] ?>" <?= ($selected_budget_id == $b['id']) ? 'selected' : '' ?>>
+                    <?= ucfirst($b['maand']) ?>
+                </option>
+            <?php endwhile; ?>
             </select>
         </div>
 
