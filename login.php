@@ -14,14 +14,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
+    $stmt->bindParam(':email', $email);
     $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($result && password_verify($password, $result['password'])) {
         $_SESSION['user_id'] = $result['id'];
-        header("Location: dashboard.php");
+        header("Location: index.php");
         exit;
     } else {
         $_SESSION['error_message'] = "Ongeldige login!";

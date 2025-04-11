@@ -28,7 +28,7 @@ if (isset($_GET['delete_budget'])) {
     $conn->query("DELETE FROM budget WHERE id = $budget_id");
     
     // Redirect naar de index pagina zodat je een refresh krijgt van het overzicht
-    header("Location: dashboard.php");
+    header("Location: index.php");
     exit;
 }
 
@@ -39,10 +39,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // Nieuwe budget invoeren als het nog niet bestaat
     if (!empty($maand) && $inkomsten > 0) {
-        $stmt = $conn->prepare("INSERT INTO budget (user_id, maand, inkomsten) VALUES (?, ?, ?)");
-        $stmt->bind_param("isd", $user_id, $maand, $inkomsten);
-        $stmt->execute();
-        $budget_id = $conn->insert_id;
+        $stmt = $conn->prepare("INSERT INTO budget (user_id, maand, inkomsten, datum_toegevoegd) VALUES (?, ?, ?, NOW())");
+        $stmt->execute([$user_id, $maand, $inkomsten]);
+        $budget_id = $conn->lastInsertId();
+
     } else {
         // Als er een bestaand budget is, voeg dan de nieuwe uitgaven toe
         $budget_id = $_POST['existing_budget_id'];
@@ -56,8 +56,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $bedrag = floatval($_POST[$cat . '_bedrag'][$index]);
                 if (!empty($omschrijving) && $bedrag > 0) {
                     $stmt = $conn->prepare("INSERT INTO uitgaven_details (budget_id, categorie, omschrijving, bedrag) VALUES (?, ?, ?, ?)");
-                    $stmt->bind_param("isss", $budget_id, $cat, $omschrijving, $bedrag);
-                    $stmt->execute();
+                    $stmt = $conn->prepare("INSERT INTO uitgaven (budget_id, categorie, omschrijving, bedrag) VALUES (?, ?, ?, ?)");
+                    $stmt->execute([$budget_id, $cat, $omschrijving, $bedrag]);
                 }
             }
         }
@@ -100,7 +100,7 @@ $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER B
         <button class="btn btn-primary">Opslaan</button>
     </form>
 
-    <?php while ($b = $budgetten->fetch_assoc()): ?>
+    <?php while ($b = $budgetten->fetch(PDO::FETCH_ASSOC)): ?>
         <?php
         $budget_id = $b['id'];
         $uitgaven = $conn->query("SELECT * FROM uitgaven_details WHERE budget_id = $budget_id");
@@ -117,7 +117,7 @@ $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER B
             <div class="card-body">
                 <?php
                 $cats = ['vaste_lasten' => [], 'reservering' => [], 'huishoudelijk' => [], 'random' => []];
-                while ($u = $uitgaven->fetch_assoc()) {
+                while ($u = $uitgaven->fetch(PDO::FETCH_ASSOC)) {
                     $cats[$u['categorie']][] = $u;
                     $totaal += $u['bedrag'];
                 }

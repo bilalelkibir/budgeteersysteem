@@ -1,7 +1,7 @@
 <?php
 $host = "localhost";
 $user = "bit_academy";
-$password = "";
+$password = "Jarvis123@";
 $database = "budgeteer_db";
 
 $conn = new PDO("mysql:host=$host;dbname=$dbname", $user, $password);
