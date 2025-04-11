@@ -31,7 +31,7 @@ Open phpMyAdmin via http://localhost/phpmyadmin.
 Maak een nieuwe database aan (bijvoorbeeld budgeteer_db).
 
 Pas de databasegegevens aan in config.php (indien nodig).
-
+```
 -- Database aanmaken
 CREATE DATABASE IF NOT EXISTS budgeteer_db;
 USE budgeteer_db;
