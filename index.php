@@ -2,7 +2,6 @@
 session_start();
 require 'config.php';
 
-// Uitloggen functionaliteit
 if (isset($_GET['logout'])) {
     session_unset();
     session_destroy();
@@ -10,49 +9,59 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
-// Controleer of de gebruiker is ingelogd
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
 $user_id = $_SESSION['user_id'];
+$user_name = $_SESSION['user_name'] ?? 'Gebruiker'; 
 
-// Haal de naam van de ingelogde gebruiker op
-$user_name = $_SESSION['user_name'] ?? 'Gebruiker';  // Als de naam niet is ingesteld, stel 'Gebruiker' in
 
-// Maand verwijderen functionaliteit
-if (isset($_GET['delete_budget'])) {
-    $budget_id = intval($_GET['delete_budget']);
+if (isset($_GET['delete_uitgave'])) {
+    $uitgave_id = intval($_GET['delete_uitgave']);
     
-    // Verwijder eerst de uitgaven die bij dit budget horen
-    $conn->query("DELETE FROM uitgaven_details WHERE budget_id = $budget_id");
-    // Verwijder dan het budget zelf
-    $conn->query("DELETE FROM budget WHERE id = $budget_id");
     
-    // Redirect naar de index pagina zodat je een refresh krijgt van het overzicht
+    $stmt = $conn->prepare("
+        SELECT ud.id 
+        FROM uitgaven_details ud
+        JOIN budget b ON ud.budget_id = b.id
+        WHERE ud.id = ? AND b.user_id = ?
+    ");
+    $stmt->execute([$uitgave_id, $user_id]);
+    if ($stmt->fetch()) {
+        $conn->prepare("DELETE FROM uitgaven_details WHERE id = ?")->execute([$uitgave_id]);
+    }
+
     header("Location: index.php");
     exit;
 }
 
-// Toevoegen van nieuwe budgetgegevens
+
+if (isset($_GET['delete_budget'])) {
+    $budget_id = intval($_GET['delete_budget']);
+
+    $conn->query("DELETE FROM uitgaven_details WHERE budget_id = $budget_id");
+    $conn->query("DELETE FROM budget WHERE id = $budget_id");
+
+    header("Location: index.php");
+    exit;
+}
+
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $maand = isset($_POST['maand']) ? $_POST['maand'] : '';
     $inkomsten = isset($_POST['inkomsten']) ? floatval($_POST['inkomsten']) : 0;
 
-    // Nieuwe budget invoeren als het nog niet bestaat
     if (!empty($maand) && $inkomsten > 0) {
         $stmt = $conn->prepare("INSERT INTO budget (user_id, maand, inkomsten, datum_toegevoegd) VALUES (?, ?, ?, NOW())");
         $stmt->execute([$user_id, $maand, $inkomsten]);
         $budget_id = $conn->lastInsertId();
-
     } else {
-        // Als er een bestaand budget is, voeg dan de nieuwe uitgaven toe
         $budget_id = $_POST['existing_budget_id'];
     }
 
-    // Uitgaven invoeren per categorie (met een random categorie)
-    $categorieën = ['vaste_lasten', 'reservering', 'huishoudelijk', 'random'];  // Toegevoegde 'random' categorie
+    $categorieën = ['vaste_lasten', 'reservering', 'huishoudelijk', 'random'];  
     foreach ($categorieën as $cat) {
         if (!empty($_POST[$cat . '_omschrijving'])) {
             foreach ($_POST[$cat . '_omschrijving'] as $index => $omschrijving) {
@@ -66,13 +75,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-// Data ophalen
+
 $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER BY datum_toegevoegd DESC");
 ?>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <div class="container mt-4">
-    <!-- Welkomstbericht met fade-in effect -->
+
     <div class="fade-in text-center mb-4">
         <h3>Welkom, <?= htmlspecialchars($user_name) ?>!</h3>
     </div>
@@ -114,7 +123,7 @@ $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER B
             </div>
         <?php endforeach; ?>
 
-        <input type="hidden" name="existing_budget_id" value="<?= isset($budget_id) ? $budget_id : '' ?>"> <!-- Als het geen nieuw budget is -->
+        <input type="hidden" name="existing_budget_id" value="<?= isset($budget_id) ? $budget_id : '' ?>"> 
         <button class="btn btn-primary">Opslaan</button>
     </form>
 
@@ -127,9 +136,7 @@ $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER B
         <div class="card mb-4">
             <div class="card-header bg-light">
                 <strong><?= ucfirst($b['maand']) ?></strong> - Inkomsten: € <?= number_format($b['inkomsten'], 2, ',', '.') ?>
-                <!-- Verwijderknop -->
                 <a href="?delete_budget=<?= $budget_id ?>" class="btn btn-danger btn-sm float-end">Verwijderen</a>
-                <!-- Toevoegen aan bestaande maand, stuur maand door -->
                 <a href="toevoegen-uitgave.php?budget_id=<?= $budget_id ?>&maand=<?= urlencode($b['maand']) ?>" class="btn btn-success btn-sm float-end me-2">Toevoegen uitgave</a>
             </div>
             <div class="card-body">
@@ -146,7 +153,10 @@ $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER B
                         <h6><?= ucfirst(str_replace('_', ' ', $cat)) ?></h6>
                         <ul>
                             <?php foreach ($items as $item): ?>
-                                <li><?= $item['omschrijving'] ?> – € <?= number_format($item['bedrag'], 2, ',', '.') ?></li>
+                                <li>
+                                    <?= htmlspecialchars($item['omschrijving']) ?> – € <?= number_format($item['bedrag'], 2, ',', '.') ?>
+                                    <a href="?delete_uitgave=<?= $item['id'] ?>" class="btn btn-sm btn-outline-danger ms-2">Verwijder</a>
+                                </li>
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
@@ -158,7 +168,6 @@ $budgetten = $conn->query("SELECT * FROM budget WHERE user_id = $user_id ORDER B
         </div>
     <?php endwhile; ?>
 
-    <!-- Uitloggen knop rechtsboven en rood -->
     <a href="?logout=true" class="btn btn-danger position-fixed top-0 end-0 m-3">Uitloggen</a>
 </div>
 
